@@ -9,27 +9,26 @@
     lib = {
       fetchUrlAndLink = { url, filename }:
         let
-          fetchedFile = pkgs.fetchurl { inherit url; };
-        in
-          {shouldUnlink? true}:
-            ''
-              # Create a symlink to the fetched file
-              ln -sf '${fetchedFile}' '${filename}'
-
-              # Create a function to unlink the file on shell exit, if required
-              ${if shouldUnlink then
-                ''
+          fetchedFile = pkgs.fetchurl ( builtins.removeAttrs args [ "filename" ] );
+          _filename = if filename!=null then filename else builtins.baseNameOf fetchedFile;
+        in {
+          shellHook =
+            let
+              persistentLink = ''
+                # Create a symlink to the fetched file
+                ln -sf '${fetchedFile}' '${filename}'
+              '';
+            in
+            {
+              inherit persistentLink;
+              temporaryLink = persistentLink + ''
                   unlink_file() {
                     rm -f '${filename}'
                   }
                   trap unlink_file EXIT
-                ''
-                else
-                  ""
-              }
-            '';
-      persistentLink = {shouldUnlink = false;};
+              '';
+            };
+        };
     };
   };
 }
-
