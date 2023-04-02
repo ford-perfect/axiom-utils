@@ -10,8 +10,15 @@
       fetchUrlAndLink = { url, filename ? null, ... } @ args:
         let
           fetchedFile = pkgs.fetchurl ( builtins.removeAttrs args [ "filename" ] );
-          _filename = if filename!=null then filename else builtins.baseNameOf fetchedFile;
+          # non greedy split
+          splitResult = storeBaseName: builtins.split "([a-z0-9]+)-" storeBaseName;
+          # get the last element of the list
+          last = list: builtins.elemAt list (builtins.length list - 1);
+          baseNameOfSingleFile = storePath: last (splitResult (builtins.baseNameOf storePath));
+          _filename = if filename!=null then filename else baseNameOfSingleFile fetchedFile;
+
         in {
+          misc.baseNameOfSingleFile = baseNameOfSingleFile;
           shellHook =
             let
               persistentLink = ''
