@@ -7,7 +7,7 @@
     pkgs = nixpkgs.legacyPackages.x86_64-linux;
   in {
     lib = {
-      fetchUrlAndLink = { url, filename }:
+      fetchUrlAndLink = { url, filename ? null, ... } @ args:
         let
           fetchedFile = pkgs.fetchurl ( builtins.removeAttrs args [ "filename" ] );
           _filename = if filename!=null then filename else builtins.baseNameOf fetchedFile;
@@ -16,14 +16,14 @@
             let
               persistentLink = ''
                 # Create a symlink to the fetched file
-                ln -sf '${fetchedFile}' '${filename}'
+                ln -sf '${fetchedFile}' '${_filename}'
               '';
             in
             {
               inherit persistentLink;
               temporaryLink = persistentLink + ''
                   unlink_file() {
-                    rm -f '${filename}'
+                    rm -f '${_filename}'
                   }
                   trap unlink_file EXIT
               '';
