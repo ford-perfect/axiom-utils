@@ -37,6 +37,31 @@
             };
         };
     };
+    pythonPathHook = {
+      selenium.chromium = pkgs: let
+        pathsInfo = pkgs.writeTextFile {
+          name = "selenium-chromium-paths-info";
+          destination = "/paths_info.py";
+          text = ''
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.chrome.webdriver import WebDriver
+
+          chromium_path = "${pkgs.chromium}/bin/chromium"
+          chromedriver_path = "${pkgs.chromedriver}/bin/chromedriver"
+
+          def create_webdriver():
+              chrome_options = Options()
+              chrome_options.binary_location = chromium_path
+              chrome_options.add_argument("--disable-dev-shm-usage")
+              chrome_options.add_argument("--no-sandbox")
+              chrome_options.add_argument("--remote-debugging-port=9222")
+              return WebDriver(executable_path=chromedriver_path, options=chrome_options)
+        '';
+        };
+        in ''
+            export PYTHONPATH="$PYTHONPATH:${pathsInfo}"
+          '';
+    };
     eyeCandy = {
       colorPrompt = projectName: ''
         export PS1="\[\033[01;35m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\[\033[01;33m\][${projectName}]\$\[\033[00m\] "
